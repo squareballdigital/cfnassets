@@ -1,5 +1,5 @@
-import { createWriteStream } from 'fs';
-import { mkdir, rename } from 'fs/promises';
+import { createReadStream, createWriteStream } from 'fs';
+import { mkdir, rename, stat } from 'fs/promises';
 import { basename, dirname, extname, join } from 'path';
 import { Readable } from 'stream';
 import { pipeline } from 'stream/promises';
@@ -8,7 +8,11 @@ import { TypedEmitter } from 'tiny-typed-emitter';
 import { hash } from '../internal/hash.js';
 import { HashStream } from '../internal/HashStream.js';
 import { ProgressStream } from '../internal/ProgressStream.js';
-import { AddAssetOpts, DeploymentBundle } from './DeploymentBundle.js';
+import {
+  AddAssetOpts,
+  DeploymentBundle,
+  DeploymentBundleAsset,
+} from './DeploymentBundle.js';
 import { ProgressStats } from './ProgressStats.js';
 
 export interface FileSystemBundleOptions {
@@ -20,17 +24,12 @@ export interface FileSystemDeploymentBundleEvents {
   assetRename(oldName: string, rename: string): void;
 }
 
-interface DeploymentBundleAsset {
-  name: string;
-  path: string;
-}
-
 export class FileSystemDeploymentBundle
   extends TypedEmitter<FileSystemDeploymentBundleEvents>
   implements DeploymentBundle
 {
   private readonly outputDir: string;
-  private readonly assets: DeploymentBundleAsset[] = [];
+  public readonly assets: DeploymentBundleAsset[] = [];
 
   constructor(options: FileSystemBundleOptions) {
     super();
@@ -73,7 +72,11 @@ export class FileSystemDeploymentBundle
       const finalPath = join(outDir, originalBasename + originalExt);
       await rename(outPath, finalPath);
 
-      this.assets.push({ name: fileName, path: finalPath });
+      this.assets.push({
+        name: fileName,
+        size: (await stat(finalPath)).size,
+        createReadStream: (encoding) => createReadStream(finalPath, encoding),
+      });
       return fileName;
     } else {
       const hashStream = new HashStream();
@@ -87,7 +90,11 @@ export class FileSystemDeploymentBundle
       await rename(outPath, finalPath);
       this.emit('assetRename', fileName, finalBasename);
 
-      this.assets.push({ name: finalBasename, path: finalPath });
+      this.assets.push({
+        name: finalBasename,
+        size: (await stat(finalPath)).size,
+        createReadStream: (encoding) => createReadStream(finalPath, encoding),
+      });
       return finalBasename;
     }
   }
