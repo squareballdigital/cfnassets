@@ -64,7 +64,7 @@
   },
   "dependencies": {
     "@fmtk/decoders": "^0.5.2",
-    "@squareball/cfntemplate": "^0.2.0",
+    "@squareball/cfntemplate": "^0.3.0",
     "archiver": "^5.3.1",
     "commander": "^9.2.0",
     "ignore": "^5.2.0",
