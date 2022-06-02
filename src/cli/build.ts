@@ -24,6 +24,7 @@ interface RollupOptions {
     packageFilePath?: string;
     packageInstallImage?: string;
     packageLockPath?: string;
+    rollupConfigPath?: string;
   };
 }
 
@@ -45,6 +46,7 @@ const decodeOptions = choose(
       packageFilePath: optional(text),
       packageInstallImage: optional(text),
       packageLockPath: optional(text),
+      rollupConfigPath: optional(text),
     }),
   }),
   object<ContentOptions>({
@@ -110,6 +112,9 @@ export function addBuildCommand(program: Command): void {
                 packageLockPath:
                   item.options.packageLockPath &&
                   resolve(source, item.options.packageLockPath),
+                rollupConfigPath:
+                  item.options.rollupConfigPath &&
+                  resolve(source, item.options.rollupConfigPath),
               });
               break;
 
