@@ -10,6 +10,7 @@ export interface PackageEntriesOptions {
   ignorePaths?: string[];
   packageFilePath: string;
   packageInstallImage?: string;
+  packageInstallPlatform?: string;
   packageLockPath: string;
   packageNames: string[];
 }
@@ -20,6 +21,7 @@ export async function* getPackageEntries({
   packageLockPath,
   packageFilePath,
   packageInstallImage,
+  packageInstallPlatform = 'linux/amd64',
   packageNames,
 }: PackageEntriesOptions): AsyncIterableIterator<ZipAssetEntry> {
   let exec: string[];
@@ -64,7 +66,7 @@ export async function* getPackageEntries({
       );
     }
     console.log(
-      `current platform is ${process.platform} so installing on ${packageInstallImage}`,
+      `current platform is ${process.platform} (${process.arch}) so installing on ${packageInstallImage} (${packageInstallPlatform})`,
     );
     exec = [
       'docker',
@@ -74,6 +76,8 @@ export async function* getPackageEntries({
       `${outDir}:/app`,
       '-w',
       '/app',
+      '--platform',
+      packageInstallPlatform,
       packageInstallImage,
       ...exec,
     ];

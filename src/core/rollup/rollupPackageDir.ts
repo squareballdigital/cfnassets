@@ -14,6 +14,7 @@ export interface RollupPackageDirOptions {
   outputPath?: string;
   packageFilePath?: string;
   packageInstallImage?: string;
+  packageInstallPlatform?: string;
   packageLockPath?: string;
   rollupConfigPath?: string;
 }
@@ -59,6 +60,7 @@ export async function rollupPackageDir(
     installPackages,
     packageFilePath: opts?.packageFilePath,
     packageInstallImage: opts?.packageInstallImage,
+    packageInstallPlatform: opts?.packageInstallPlatform,
     packageLockPath: opts?.packageLockPath,
   });
 

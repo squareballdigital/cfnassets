@@ -23,6 +23,7 @@ interface RollupOptions {
     install?: string[];
     packageFilePath?: string;
     packageInstallImage?: string;
+    packageInstallPlatform?: string;
     packageLockPath?: string;
     rollupConfigPath?: string;
   };
@@ -45,6 +46,7 @@ const decodeOptions = choose(
       install: optional(array(text)),
       packageFilePath: optional(text),
       packageInstallImage: optional(text),
+      packageInstallPlatform: optional(text),
       packageLockPath: optional(text),
       rollupConfigPath: optional(text),
     }),
@@ -109,6 +111,7 @@ export function addBuildCommand(program: Command): void {
                   item.options.packageFilePath &&
                   resolve(source, item.options.packageFilePath),
                 packageInstallImage: item.options.packageInstallImage,
+                packageInstallPlatform: item.options.packageInstallPlatform,
                 packageLockPath:
                   item.options.packageLockPath &&
                   resolve(source, item.options.packageLockPath),
