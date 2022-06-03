@@ -8,9 +8,9 @@ import { ZipAssetEntry } from './ZipAssetEntry.js';
 export interface PackageEntriesOptions {
   archivePath?: string;
   ignorePaths?: string[];
+  packageArch?: string;
   packageFilePath: string;
-  packageInstallImage?: string;
-  packageInstallPlatform?: string;
+  packagePlatform?: string;
   packageLockPath: string;
   packageNames: string[];
 }
@@ -20,11 +20,12 @@ export async function* getPackageEntries({
   ignorePaths,
   packageLockPath,
   packageFilePath,
-  packageInstallImage,
-  packageInstallPlatform = 'linux/amd64',
+  packageArch,
+  packagePlatform,
   packageNames,
 }: PackageEntriesOptions): AsyncIterableIterator<ZipAssetEntry> {
   let exec: string[];
+  let npmConfig = '';
 
   const lockBasename = basename(packageLockPath);
   if (lockBasename === 'package-lock.json') {
@@ -55,32 +56,19 @@ export async function* getPackageEntries({
     newPackageJson.dependencies[dep] = version;
   }
 
+  if (packageArch) {
+    npmConfig += `arch=${packageArch}\n`;
+  }
+  if (packagePlatform) {
+    npmConfig += `platform=${packagePlatform}\n`;
+  }
+
   const outDir = temporaryDirectory();
   await writeFile(join(outDir, 'package.json'), JSON.stringify(newPackageJson));
   await copyFile(packageLockPath, join(outDir, lockBasename));
 
-  if (process.platform !== 'linux') {
-    if (!packageInstallImage) {
-      throw new Error(
-        `the current platform is ${process.platform} but no packageInstallImage has been provided`,
-      );
-    }
-    console.log(
-      `current platform is ${process.platform} (${process.arch}) so installing on ${packageInstallImage} (${packageInstallPlatform})`,
-    );
-    exec = [
-      'docker',
-      'run',
-      '--rm',
-      '-v',
-      `${outDir}:/app`,
-      '-w',
-      '/app',
-      '--platform',
-      packageInstallPlatform,
-      packageInstallImage,
-      ...exec,
-    ];
+  if (npmConfig) {
+    await writeFile(join(outDir, '.npmrc'), npmConfig);
   }
 
   const [cmd, ...args] = exec;

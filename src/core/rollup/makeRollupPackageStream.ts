@@ -9,9 +9,9 @@ export interface RollupPackageOptions {
   ignore?: string[];
   inputOptions: InputOptions;
   installPackages?: string[];
+  packageArch?: string;
   packageFilePath?: string;
-  packageInstallImage?: string;
-  packageInstallPlatform?: string;
+  packagePlatform?: string;
   packageLockPath?: string;
 }
 
@@ -19,9 +19,9 @@ export async function makeRollupPackageStream({
   ignore,
   inputOptions,
   installPackages,
+  packageArch,
   packageFilePath,
-  packageInstallImage,
-  packageInstallPlatform,
+  packagePlatform,
   packageLockPath,
 }: RollupPackageOptions): Promise<Readable> {
   const entries: ZipAssetEntry[] = [];
@@ -37,9 +37,9 @@ export async function makeRollupPackageStream({
     }
     const packageFiles = getPackageEntries({
       ignorePaths: ignore,
+      packageArch,
       packageFilePath,
-      packageInstallImage,
-      packageInstallPlatform,
+      packagePlatform,
       packageLockPath,
       packageNames: installPackages,
     });
