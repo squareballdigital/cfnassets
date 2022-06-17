@@ -1,6 +1,8 @@
 import { createWriteStream } from 'fs';
 import { mkdir } from 'fs/promises';
 import { dirname, resolve } from 'path';
+import { MergedRollupOptions } from 'rollup';
+import loadConfigFile from 'rollup/loadConfigFile';
 import { pipeline } from 'stream/promises';
 import { addBundleInfoToPackageJson } from '../../internal/addBundleInfoToPackageJson.js';
 import { readDotIgnoreForFolder } from '../../internal/readDotIgnoreForFolder.js';
@@ -33,35 +35,23 @@ export async function rollupPackageDir(
 
   const rollupConfigPath = opts?.rollupConfigPath || 'rollup.config.js';
 
-  let rollupConfig = await import(resolve(dirPath, rollupConfigPath));
-  const externals = rollupConfig?.external;
-
-  if (rollupConfig?.default) {
-    rollupConfig = rollupConfig.default;
-  }
-
-  if (opts?.entrypoint) {
-    rollupConfig = {
-      ...rollupConfig,
-      input: opts.entrypoint,
-    };
-  }
-
-  if (
-    Array.isArray(externals) &&
-    externals.every((x: unknown) => typeof x === 'string')
-  ) {
-    installPackages.push(...externals);
-  }
+  const { options, warnings } = await loadConfigFile(
+    resolve(dirPath, rollupConfigPath),
+  );
 
   const output = await makeRollupPackageStream({
     ignore: ignorePaths,
-    inputOptions: rollupConfig,
     installPackages,
+    options: opts?.entrypoint
+      ? options.map(
+          (x): MergedRollupOptions => ({ ...x, input: opts.entrypoint }),
+        )
+      : options,
     packageArch: opts?.packageArch,
     packageFilePath: opts?.packageFilePath,
     packagePlatform: opts?.packagePlatform,
     packageLockPath: opts?.packageLockPath,
+    warnings,
   });
 
   await mkdir(dirname(fullOutputPath), { recursive: true });

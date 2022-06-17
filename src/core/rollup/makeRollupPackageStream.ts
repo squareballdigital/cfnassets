@@ -1,4 +1,5 @@
-import { InputOptions } from 'rollup';
+import { MergedRollupOptions } from 'rollup';
+import { BatchWarnings } from 'rollup/loadConfigFile';
 import { Readable } from 'stream';
 import { getPackageEntries } from '../zip/getPackageEntries.js';
 import { makeZipPackageStream } from '../zip/makeZipPackageStream.js';
@@ -7,26 +8,28 @@ import { rollupPackageEntries } from './rollupPackageEntries.js';
 
 export interface RollupPackageOptions {
   ignore?: string[];
-  inputOptions: InputOptions;
   installPackages?: string[];
+  options: MergedRollupOptions[];
   packageArch?: string;
   packageFilePath?: string;
   packagePlatform?: string;
   packageLockPath?: string;
+  warnings: BatchWarnings;
 }
 
 export async function makeRollupPackageStream({
   ignore,
-  inputOptions,
   installPackages,
+  options,
   packageArch,
   packageFilePath,
   packagePlatform,
   packageLockPath,
+  warnings,
 }: RollupPackageOptions): Promise<Readable> {
   const entries: ZipAssetEntry[] = [];
 
-  for await (const entry of rollupPackageEntries(inputOptions)) {
+  for await (const entry of rollupPackageEntries(options, warnings)) {
     entries.push(entry);
   }
   if (installPackages?.length) {

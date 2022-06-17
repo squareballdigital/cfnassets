@@ -1,59 +1,46 @@
-import path from 'path';
-import { InputOptions, rollup } from 'rollup';
+import { MergedRollupOptions, rollup } from 'rollup';
+import { BatchWarnings } from 'rollup/loadConfigFile';
 import { ZipAssetEntry } from '../zip/ZipAssetEntry.js';
 
 const SourceMapUrl = 'sourceMappingURL';
 
 export async function* rollupPackageEntries(
-  inputOptions: InputOptions,
+  options: MergedRollupOptions[],
+  warnings: BatchWarnings,
 ): AsyncIterableIterator<ZipAssetEntry> {
-  const bundle = await rollup({
-    ...inputOptions,
-    onwarn: (warning) => {
-      if (warning.loc) {
-        console.error(
-          `%s (%d, %d): %s`,
-          warning.loc.file &&
-            path.relative(path.resolve('.'), warning.loc.file),
-          warning.loc.line,
-          warning.loc.column,
-          warning.message,
-        );
-      } else {
-        console.error(warning.message);
+  for (const inputOptions of options) {
+    const bundle = await rollup(inputOptions);
+
+    for (const outputOptions of inputOptions.output) {
+      const output = await bundle.generate(outputOptions);
+
+      for (const chunkOrAsset of output.output) {
+        let content: Buffer;
+
+        if (chunkOrAsset.type === 'asset') {
+          content = Buffer.from(chunkOrAsset.source);
+        } else if (chunkOrAsset.type === 'chunk') {
+          let code = chunkOrAsset.code;
+
+          if (chunkOrAsset.map) {
+            const url = `${chunkOrAsset.fileName}.map`;
+
+            yield {
+              archivePath: url,
+              content: chunkOrAsset.map.toString(),
+            };
+            code += `//# ${SourceMapUrl}=${url}\n`;
+          }
+
+          content = Buffer.from(code);
+        } else {
+          continue;
+        }
+
+        yield { archivePath: chunkOrAsset.fileName, content };
+        warnings?.flush();
       }
-    },
-  });
-
-  const output = await bundle.generate({
-    file: 'index.js',
-    format: 'cjs',
-    sourcemap: true,
-  });
-
-  for (const chunkOrAsset of output.output) {
-    let content: Buffer;
-
-    if (chunkOrAsset.type === 'asset') {
-      content = Buffer.from(chunkOrAsset.source);
-    } else if (chunkOrAsset.type === 'chunk') {
-      let code = chunkOrAsset.code;
-
-      if (chunkOrAsset.map) {
-        const url = `${chunkOrAsset.fileName}.map`;
-
-        yield {
-          archivePath: url,
-          content: chunkOrAsset.map.toString(),
-        };
-        code += `//# ${SourceMapUrl}=${url}\n`;
-      }
-
-      content = Buffer.from(code);
-    } else {
-      continue;
     }
-
-    yield { archivePath: chunkOrAsset.fileName, content };
   }
+  warnings?.flush();
 }

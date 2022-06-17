@@ -14,7 +14,10 @@
     "rootDir": "src",
     "sourceMap": true,
     "strict": true,
-    "target": "ES2022"
+    "target": "ES2022",
+    "paths": {
+      "rollup/loadConfigFile": ["./src/types/loadConfigFile.d.ts"]
+    }
   },
   "include": ["src/"],
   "exclude": ["node_modules", "lib"]

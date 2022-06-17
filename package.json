@@ -60,12 +60,13 @@
     "onchange": "^7.0.2",
     "prettier": "^2.1.2",
     "typedoc": "^0.22.11",
-    "typescript": "^4.5.5"
+    "typescript": "^4.6.4"
   },
   "dependencies": {
     "@fmtk/decoders": "^0.5.2",
     "@squareball/cfntemplate": "^0.5.0",
     "archiver": "^5.3.1",
+    "chalk": "^5.0.1",
     "commander": "^9.2.0",
     "ignore": "^5.2.0",
     "rollup": "^2.73.0",

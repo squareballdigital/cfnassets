@@ -1,3 +1,4 @@
+import chalk from 'chalk';
 import childProc from 'child_process';
 import { copyFile, readFile, writeFile } from 'fs/promises';
 import { basename, join } from 'path';
@@ -25,7 +26,7 @@ export async function* getPackageEntries({
   packageNames,
 }: PackageEntriesOptions): AsyncIterableIterator<ZipAssetEntry> {
   let exec: string[];
-  let npmConfig = '';
+  const npmConfig: string[] = [];
 
   const lockBasename = basename(packageLockPath);
   if (lockBasename === 'package-lock.json') {
@@ -57,21 +58,25 @@ export async function* getPackageEntries({
   }
 
   if (packageArch) {
-    npmConfig += `arch=${packageArch}\n`;
+    npmConfig.push(`arch=${packageArch}`);
   }
   if (packagePlatform) {
-    npmConfig += `platform=${packagePlatform}\n`;
+    npmConfig.push(`platform=${packagePlatform}`);
   }
 
   const outDir = temporaryDirectory();
   await writeFile(join(outDir, 'package.json'), JSON.stringify(newPackageJson));
   await copyFile(packageLockPath, join(outDir, lockBasename));
 
-  if (npmConfig) {
-    await writeFile(join(outDir, '.npmrc'), npmConfig);
+  if (npmConfig.length) {
+    await writeFile(join(outDir, '.npmrc'), npmConfig.join('\n') + '\n');
   }
 
   const [cmd, ...args] = exec;
+
+  const flags = npmConfig.join(', ');
+  console.log(`\n${chalk.cyan.bold(`${cmd} install`)} ${chalk.gray(flags)}`);
+
   const proc = childProc.spawn(cmd, args, {
     cwd: outDir,
     stdio: 'inherit',
@@ -86,6 +91,8 @@ export async function* getPackageEntries({
       }
     });
   });
+
+  console.log(`\n`);
 
   yield* getFolderEntries({
     source: join(outDir, 'node_modules'),
